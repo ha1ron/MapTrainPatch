@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from . import map_editor
+from . import map_editor, Server_connector
 from .forms import getPoezd
 from django.contrib import messages
 from django.http import JsonResponse
@@ -56,3 +56,10 @@ def map_ajax(request):
     return JsonResponse(response)
 
 
+def poezd_suggest(request):
+    pattern = request.GET.get('search_keyword')
+    pattern = '%' + pattern + '%'
+    filter = '?poezd=' + pattern
+    poezd_json = Server_connector.get_set('PoezdSuggest', filter)
+    response = {'trains_code': poezd_json}
+    return JsonResponse(response)

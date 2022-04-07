@@ -8,15 +8,14 @@ def sapCreateSession():  # Создание сессии для запросов
 
     # Конектимся к SAP
 
-    s = requests.Session()
-    s.headers.update({'Connection': 'keep-alive', 'X-CSRF-TOKEN': 'Fetch'})
+    session = requests.Session()
+    session.headers.update({'Connection': 'keep-alive', 'X-CSRF-TOKEN': 'Fetch'})
     try:
-        r = s.get(sap_opt['baseurl'], auth=(sap_opt['user'], sap_opt['passwd']), verify=sap_opt['verify'])
+        r = session.get(sap_opt['baseurl'], auth=(sap_opt['user'], sap_opt['passwd']), verify=sap_opt['verify'])
     except:
         message = "Нет соединения с системой %s  %s" % (sap_opt['mandt'], sap_opt['name'])
         return ('NO TOKEN', 'NoSession', message)
     token = r.headers['x-csrf-token']
-    session = s
     sess = (token, session, None)
     return sess
 
