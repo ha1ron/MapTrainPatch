@@ -11,9 +11,25 @@
         top: 15%;
         right: 0;
         position: fixed;
-        overflow-y: scroll;
+        overflow-y: auto;
         max-height: 70%;
-
+    }
+    .table {
+        table-layout: fixed;
+        border-collapse: collapse;
+    }
+    .table tbody {
+      display: block;
+      width: 100%;
+      overflow: auto;
+      height: 100%;
+    }
+    .table thead tr {
+      display: block;
+    }
+    #numHeader{
+        overflow-y: auto;
+        max-height: 530px;
     }
 </style>
 
@@ -69,6 +85,7 @@
             </div>
         </main>
         <nav id="sidebarMenu" class="col-md-2 col-lg-4 d-md-block sidebar collapse fix_r">
+            <div id="start_end"></div>
             <table class="table">
                 <tr>
                     <th>Станция начала</th>
@@ -201,6 +218,12 @@
                     document.getElementById("numHeader").insertAdjacentHTML('beforeend', '<td>' + data.numbering[i].CHET + '</td>');*/
                     //document.getElementById("numHeader").insertAdjacentHTML('beforeend', '</tr>');
                 }
+
+                document.getElementById("start_end").innerHTML = "";
+                document.getElementById("start_end").insertAdjacentHTML('beforeend', '<h3> Станция начала: ' + data.start_end_meta[0].stantion_start
+                                                                        + '-' + data.start_end_meta[0].stantion_start_name + '</h3>');
+                document.getElementById("start_end").insertAdjacentHTML('beforeend', '<h3> Станция конца: ' + data.start_end_meta[0].stantion_finish
+                                                                        + '-' + data.start_end_meta[0].stantion_finish_name + '</h3>');
 
 
             });

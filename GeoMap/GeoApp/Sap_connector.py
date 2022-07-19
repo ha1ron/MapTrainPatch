@@ -4,6 +4,7 @@ from requests.auth import HTTPBasicAuth
 from .local_settings import sap_opt
 
 
+
 def sapCreateSession():  # Создание сессии для запросов oDATA
 
     # Конектимся к SAP

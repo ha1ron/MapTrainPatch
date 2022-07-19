@@ -9,14 +9,20 @@ ICONS_EXIST = 100
 
 
 def getMap(month, poezd):
-    # filter = '$filter=MONTH%20eq%20%27' + month + '%27%20and%20poezd%20eq%20%27' + poezd + '%27'
-    # stantions = Sap_connector.get_oData_set('InvestigationSet', filter)
-    filter = '?MONTH=' + month + '&poezd=' + poezd
-    stantions = Server_connector.get_set('InvestigationSet', filter)
+    filter = '$filter=MONTH%20eq%20%27' + month + '%27%20and%20poezd%20eq%20%27' + poezd + '%27'
+    stantions = Sap_connector.get_oData_set('InvestigationSet', filter)
+    # filter = '?MONTH=' + month + '&poezd=' + poezd
+    # stantions = Server_connector.get_set('InvestigationSet', filter)
 
     if not stantions:
         return folium.Map(zoom_start=5, control_scale=True)._repr_html_(), 'no_data', [], []
-    mapp = folium.Map(location=[stantions[0]['LAT'], stantions[0]['LON']], zoom_start=8, control_scale=True)
+
+    start_element = 0
+    for row in stantions:
+        if row['LAT'] != '0':
+            break
+        start_element += 1
+    mapp = folium.Map(location=[stantions[start_element]['LAT'], stantions[start_element]['LON']], zoom_start=8, control_scale=True)
     fs = plugins.Fullscreen()
     mapp.add_child(fs)
 
@@ -52,8 +58,11 @@ def getMap(month, poezd):
                           icon=icon).add_to(mapp)
 
     # добавляем станции и конца
-    # start_end = Sap_connector.get_oData_set('InvestigationSFSet', filter)
-    start_end = Server_connector.get_set('InvestigationSFSet', filter)
+    start_end = Sap_connector.get_oData_set('InvestigationSFSet', filter)
+    # start_end = Server_connector.get_set('InvestigationSFSet', filter)
+
+    start_end_meta = []
+
     if start_end[0]['LAT_START'] or start_end[0]['LON_START']:
         icon = folium.features.CustomIcon('./static/icons/1.png', icon_size=(40, 40),
                                           icon_anchor=(20, 40), popup_anchor=(0, -40))
@@ -65,6 +74,13 @@ def getMap(month, poezd):
         folium.Marker(location=[float(start_end[0]['LAT_START']), float(start_end[0]['LON_START'])],
                       popup=('Начало' + '\n' + start_end[0]['STANTION_START'] + '\n' + start_end[0]['NAME_START']),
                       icon=icon).add_to(mapp)
+    else:
+        cord_line = {'poezd': start_end[0]['poezd'],
+                     'MONTH': start_end[0]['MONTH'],
+                     'STANTION': start_end[0]['STANTION_START'],
+                     'NAME': start_end[0]['NAME_START'],
+                     'NUMBER': 0}
+        no_coord.append(cord_line)
 
     if start_end[0]['LAT_FINISH'] or start_end[0]['LON_FINISH']:
         patch = './static/icons/default.png'
@@ -80,17 +96,29 @@ def getMap(month, poezd):
                       popup=('Конец' + '\n' + start_end[0]['STANTION_FINISH'] + '\n' + start_end[0]['NAME_FINISH']),
                       # icon=folium.Icon(color='blue', icon=globe)).add_to(mapp)
                       icon=icon).add_to(mapp)
+    else:
+        cord_line = {'poezd': start_end[0]['poezd'],
+                     'MONTH': start_end[0]['MONTH'],
+                     'STANTION': start_end[0]['STANTION_FINISH'],
+                     'NAME': start_end[0]['NAME_FINISH'],
+                     'NUMBER': 0}
+        no_coord.append(cord_line)
+
+    start_end_meta.append({'stantion_start': start_end[0]['STANTION_START'],
+                           'stantion_start_name': start_end[0]['NAME_START'],
+                           'stantion_finish': start_end[0]['STANTION_FINISH'],
+                           'stantion_finish_name': start_end[0]['NAME_FINISH']})
 
     # данные для таблицы проследования
-    # numbering = Sap_connector.get_oData_set('StNumberingSet', filter)
-    numbering = Server_connector.get_set('StNumberingSet', filter)
+    numbering = Sap_connector.get_oData_set('StNumberingSet', filter)
+    # numbering = Server_connector.get_set('StNumberingSet', filter)
 
     # mapp = make_legend(mapp, title, uno)
 
-    return mapp._repr_html_(), '', no_coord, numbering
+    return mapp._repr_html_(), '', no_coord, numbering, start_end_meta
 
 
-# getMap(month='202101', uno='000965197660')
+# getMap(month='202204', poezd='61922174005006')
 
 
 def make_legend(mapp, title, uno):

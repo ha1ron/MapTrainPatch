@@ -23,7 +23,7 @@ def map(request):
             month_form = form.cleaned_data['month'].replace("-", "")
             poezd_form = form.cleaned_data['poezd']
 
-    map, error, no_coord, numbering = map_editor.getMap(month_form, poezd_form)
+    map, error, no_coord, numbering, start_end_meta = map_editor.getMap(month_form, poezd_form)
 
     context = {'my_map': map,
                'no_coord': no_coord}
@@ -49,10 +49,12 @@ def map_ajax(request):
         poezd = form.cleaned_data['poezd']
         poezd = str(poezd).zfill(16)
 
-    ajax_map, error, no_coord, numbering = map_editor.getMap(month, poezd)
+    ajax_map, error, no_coord, numbering, start_end_meta = map_editor.getMap(month, poezd)
     response = {'ajax_map': ajax_map,
                 'no_coord': no_coord,
-                'numbering': numbering}
+                'numbering': numbering,
+                'start_end_meta': start_end_meta}
+
     return JsonResponse(response)
 
 
