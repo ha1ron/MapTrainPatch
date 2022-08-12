@@ -1,0 +1,302 @@
+{% extends 'GeoApp/base.html' %}
+
+{% block title %}
+Проследование
+{% endblock %}
+
+{% block style %}
+
+<style type="text/css">
+    .fix_r {
+        top: 15%;
+        right: 0;
+        position: fixed;
+        overflow-y: auto;
+        /*max-height: 70%;*/
+    }
+    .table {
+        table-layout: fixed;
+        border-collapse: collapse;
+    }
+    .table tbody {
+      display: block;
+      width: 100%;
+      overflow: auto;
+      height: 100%;
+    }
+    .table thead tr {
+      display: block;
+    }
+    #numHeader, #unoList{
+        overflow-y: auto;
+        max-height: 530px;
+    }
+
+    /*switch*/
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #2196F3;/*#ccc;*/
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        -webkit-transition: .4s;
+        transition: .4s;
+    }
+
+    input:checked + .slider {
+        background-color: #2196F3;
+    }
+
+    input:focus + .slider {
+        box-shadow: 0 0 1px #2196F3;
+    }
+
+    input:checked + .slider:before {
+        -webkit-transform: translateX(26px);
+        -ms-transform: translateX(26px);
+        transform: translateX(26px);
+    }
+
+    #uno_list{
+        display: none;
+    }
+
+    #sw_uno_train{
+        font-size: 20px;
+        text-align: center;
+        letter-spacing: 5px;
+    }
+/*switch*/
+
+</style>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row">
+        <main class="col-md-9  col-lg-8 px-md-4">
+            <div
+                    class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <section class="h-100 h-custom w-100">
+
+                    <form id="my_form" class="px-md-2" method="POST">
+                        {% csrf_token %}
+                        <div class=" form-outline mb-4">
+                            <lable class="form-label" for="{{ form.month.id_for_label }}">{{ form.month.label }}:
+                            </lable>
+                            {{ form.month }}
+                        </div>
+                        <div class="form-outline mb-4">
+                            <lable class="form-label" for="{{ form.poezd.id_for_label }}">{{ form.uno.label }}:
+                            </lable>
+                            {{ form.uno }}
+                        </div>
+                        <div class="form-outline mb-4">
+                            <lable class="form-label" for="{{ form.poezd.id_for_label }}">{{ form.iddos.label }}:
+                            </lable>
+                            {{ form.iddos }}
+                        </div>
+                        <button id="subb" type="submit" class="btn btn-success btn-lg mb-1">Отобразить маршрут</button>
+                    </form>
+                </section>
+
+            </div>
+
+            <h2>Проследование</h2>
+            <div class="container">
+
+                <div class="row">
+
+                    <div class="col-lg-12 text-center">
+
+                        <div class="pad_5"></div>
+
+                        <div id="mapper" style="width: 100%"></div>
+
+                    </div>
+
+                </div>
+
+                <div class="row">
+                    <table id="my_table" class="table">
+                    </table>
+                </div>
+
+            </div>
+        </main>
+        <nav id="sidebarMenu" class="col-md-2 col-lg-4 d-md-block sidebar collapse fix_r">
+            <div id="sw_uno_train"> По станциям
+            <label class="switch">
+                <input type="checkbox" id="train_uno_box" onchange="listChangeViz()">
+                 <span class="slider"></span>
+            </label> По поездам </div><br>
+            <div id="start_end"></div>
+            <table class="table" id="train_list">
+                <tr>
+                    <th>Станция начала</th>
+                    <th>Станция конца</th>
+                    <th>&#8470;</th>
+                    <th>Код участка</th>
+                    <th>Четность</th>
+                </tr>
+                <tbody id="numHeader">
+
+                </tbody>
+            </table>
+
+            <table class="table" id="uno_list">
+                <tr>
+                    <th>Поезд</th>
+                    <th>MIN_DTOP_T</th>
+                    <th>MAX_DTOP_T</th>
+                    <th>Станция отправления</th>
+                    <th>Станция назначения</th>
+                </tr>
+                <tbody id="unoList">
+
+                </tbody>
+            </table>
+
+        </nav>
+    </div>
+</div>
+
+<script>
+
+    $(function () {
+        $("#my_form").submit(function (event) {
+            // Stop form from submitting normally
+            event.preventDefault();
+            var friendForm = $(this);
+            // Send the data using post
+            var posting = $.post("{% url 'map_uno_ajax' %}", friendForm.serialize());
+
+            document.getElementById("mapper").innerHTML = "<h2>Идет построение карты...<h2>";
+            document.getElementById("my_table").innerHTML = "";
+
+            // if success:
+            posting.done(function (data) {
+                document.getElementById("mapper").innerHTML = "";
+                var block = document.getElementById("mapper");
+                block.insertAdjacentHTML('afterbegin', data.ajax_map)
+
+                document.getElementById("my_table").innerHTML = "";
+                if (data.no_coord) {
+                    document.getElementById("my_table").insertAdjacentHTML('afterbegin', '<th>Нет координат для</th> <th>/BIC/AZGO_GEO2</th>');
+                }
+                for (i in data.no_coord) {
+                    document.getElementById("my_table").insertAdjacentHTML('beforeend', '<tr><td>' + data.no_coord[i].STANTION + '</td></tr>');
+                };
+
+                document.getElementById("numHeader").innerHTML = "";
+                for (i in data.numbering) {
+                    //document.getElementById("numHeader").insertAdjacentHTML('beforeend', '<tr>');
+                    document.getElementById("numHeader").insertAdjacentHTML('beforeend', '<td>' + data.numbering[i].STANTION_START + '</td>' +
+                        '<td>' + data.numbering[i].STANTION_FINISH + '</td>' +
+                        '<td>' + data.numbering[i].NUMBER + '</td>' +
+                        '<td>' + data.numbering[i].CASAR + '</td>' +
+                        '<td>' + data.numbering[i].CHET + '</td>');
+
+
+                    /*document.getElementById("numHeader").insertAdjacentHTML('beforeend', '<td>' + data.numbering[i].STANTION_FINISH + '</td>');
+                    document.getElementById("numHeader").insertAdjacentHTML('beforeend', '<td>' + data.numbering[i].NUMBER + '</td>');
+                    document.getElementById("numHeader").insertAdjacentHTML('beforeend', '<td>' + data.numbering[i].CASAR + '</td>');
+                    document.getElementById("numHeader").insertAdjacentHTML('beforeend', '<td>' + data.numbering[i].CHET + '</td>');*/
+                    //document.getElementById("numHeader").insertAdjacentHTML('beforeend', '</tr>');
+                }
+
+                document.getElementById("start_end").innerHTML = "";
+                document.getElementById("start_end").insertAdjacentHTML('beforeend', '<h3> Станция начала: ' + data.start_end_meta[0].stantion_start
+                                                                        + '-' + data.start_end_meta[0].stantion_start_name + '</h3>');
+                document.getElementById("start_end").insertAdjacentHTML('beforeend', '<h3> Станция конца: ' + data.start_end_meta[0].stantion_finish
+                                                                        + '-' + data.start_end_meta[0].stantion_finish_name + '</h3>');
+
+                
+                document.getElementById("unoList").innerHTML = "";
+                for (i in data.numbering) {
+                    document.getElementById("unoList").insertAdjacentHTML('beforeend', '<td>' + data.uno_list[i].POEZD + '</td>' +
+                        '<td>' + data.uno_list[i].MIN_DTOP_T + '</td>' +
+                        '<td>' + data.uno_list[i].MAX_DTOP_T + '</td>' +
+                        '<td>' + data.uno_list[i].STANTION_START + '</td>' +
+                        '<td>' + data.uno_list[i].STANTION_FINISH + '</td>');
+                }                                                        
+            
+            });
+            // if failure:
+            posting.fail(function (data) {
+                // 4xx or 5xx response, alert user about failure
+                console.log(data.responseJSON.errors)
+            });
+        });
+    });
+
+    $(function () {
+        var minlength = 3;
+
+        $("#id_poezd").keyup(function () {
+            value = $(this).val();
+
+            if (value.length >= minlength) {
+                searchRequest = $.ajax({
+                    type: "GET",
+                    url: "{% url 'poezd_suggest' %}",
+                    data: {
+                        'search_keyword': value
+                    },
+                    //dataType: "text",
+                    success: function (data) {
+                        $("#id_poezd").autocomplete({
+                            source: data.trains_code
+                        });
+
+
+                    }
+                });
+            }
+        });
+    });
+
+function listChangeViz(){
+    const box = document.querySelector('#train_uno_box'); 
+    if (box.checked){
+        $("#train_list").hide();
+        $("#uno_list").show();
+    } else {
+        $("#train_list").show();
+        $("#uno_list").hide();
+    }
+}
+
+
+</script>
+
+{% endblock %}
