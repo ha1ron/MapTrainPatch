@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from . import map_editor, Server_connector
 from .forms import GetPoezd, GetUno
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 
 
 # Create your views here.
@@ -39,9 +39,20 @@ def map(request):
         return render(request, 'GeoApp/home.html', context)
 
 
-def map_two(request):
-    form = GetPoezd()
-    return render(request, 'GeoApp/map_two.html', {'form': form})
+def map_two(request, month='', poezd=''):
+    if month:
+        initial_dict = {
+            "month": month,
+            "poezd": poezd,
+        }
+        form = GetPoezd(initial=initial_dict)
+        response = {'form': form,
+                    'autosubmit': 'True'}
+    else:
+        form = GetPoezd()
+        response = {'form': form}
+
+    return render(request, 'GeoApp/map_two.html', response)
 
 
 def map_uno(request):
@@ -61,13 +72,18 @@ def map_uno_ajax(request):
         iddos = form.cleaned_data['iddos']
         iddos = str(iddos).zfill(10)
 
-    ajax_map, error, no_coord, start_end_meta, numbering, uno_list = map_editor.getMapUno(month, uno, iddos)
+    # ajax_map, error, no_coord, start_end_meta, numbering, uno_list = map_editor.getMapUno(month, uno, iddos)
+    # uno_map, uno_no_coord = map_editor.getMapUnoCut(month, uno, iddos)
+
+    ajax_map, error, no_coord, start_end_meta, numbering, uno_list, uno_map, uno_no_coord = map_editor.getMapUnoSOAP(month, uno, iddos)
 
     response = {'ajax_map': ajax_map,
                 'no_coord': no_coord,
                 'start_end_meta': start_end_meta,
                 'numbering': numbering,
-                'uno_list': uno_list}
+                'uno_list': uno_list,
+                'uno_map': uno_map,
+                'uno_no_coord': uno_no_coord}
     return JsonResponse(response)
 
 
@@ -82,7 +98,8 @@ def map_ajax(request):
         poezd = str(poezd).zfill(16)
         st_text = form.cleaned_data['st_text']
 
-    ajax_map, error, no_coord, numbering, start_end_meta = map_editor.getMap(month, poezd, icon_text=st_text)
+    # ajax_map, error, no_coord, numbering, start_end_meta = map_editor.getMap(month, poezd, icon_text=st_text)
+    ajax_map, error, no_coord, numbering, start_end_meta = map_editor.getMapSOAP(month, poezd, icon_text=st_text)
     response = {'ajax_map': ajax_map,
                 'no_coord': no_coord,
                 'numbering': numbering,
@@ -91,10 +108,25 @@ def map_ajax(request):
     return JsonResponse(response)
 
 
+def test_ajax(request, tt):
+    table = [{'col1': '123', 'col2': '321', 'col3': 'abc', 'col4': 'cab'}]
+    response = {'data1': table}
+    print(tt)
+
+    return JsonResponse(response)
+
+
 def poezd_suggest(request):
     pattern = request.GET.get('search_keyword')
     pattern = '%' + pattern + '%'
     filter = '?poezd=' + pattern
-    poezd_json = Server_connector.get_set('PoezdSuggest', filter)
-    response = {'trains_code': poezd_json}
-    return JsonResponse(response)
+    # poezd_json = Server_connector.get_set('PoezdSuggest', filter)
+    # response = {'trains_code': poezd_json}
+    # return JsonResponse(response)
+    return JsonResponse({})
+
+
+def new_tab(request):
+    pattern = request.GET.get('data')
+    print(pattern)
+    return redirect('map_two.html', {'form': 'form'})

@@ -84,7 +84,7 @@
         transform: translateX(26px);
     }
 
-    #uno_list{
+    #uno_list, #mapper_uno, #uno_no_cord{
         display: none;
     }
 
@@ -104,8 +104,7 @@
 <div class="container-fluid">
     <div class="row">
         <main class="col-md-9  col-lg-8 px-md-4">
-            <div
-                    class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <section class="h-100 h-custom w-100">
 
                     <form id="my_form" class="px-md-2" method="POST">
@@ -141,6 +140,7 @@
                         <div class="pad_5"></div>
 
                         <div id="mapper" style="width: 100%"></div>
+                        <div id="mapper_uno" style="width: 100%"></div>
 
                     </div>
 
@@ -148,6 +148,8 @@
 
                 <div class="row">
                     <table id="my_table" class="table">
+                    </table>
+                    <table id="uno_no_cord" class="table">
                     </table>
                 </div>
 
@@ -161,6 +163,7 @@
             </label> По поездам </div><br>
             <div id="start_end"></div>
             <table class="table" id="train_list">
+                <thead>
                 <tr>
                     <th>Станция начала</th>
                     <th>Станция конца</th>
@@ -168,19 +171,24 @@
                     <th>Код участка</th>
                     <th>Четность</th>
                 </tr>
+                </thead>
                 <tbody id="numHeader">
 
                 </tbody>
             </table>
 
             <table class="table" id="uno_list">
+            <!--<table class="display" style="width:100%" id="uno_list">-->
+                <thead>
                 <tr>
+                    <th>№</th>
                     <th>Поезд</th>
-                    <th>MIN_DTOP_T</th>
-                    <th>MAX_DTOP_T</th>
                     <th>Станция отправления</th>
+                    <th>Название</th>
                     <th>Станция назначения</th>
+                    <th>Название</th>
                 </tr>
+                </thead>
                 <tbody id="unoList">
 
                 </tbody>
@@ -203,11 +211,18 @@
             document.getElementById("mapper").innerHTML = "<h2>Идет построение карты...<h2>";
             document.getElementById("my_table").innerHTML = "";
 
+            document.getElementById("mapper_uno").innerHTML = "<h2>Идет построение карты...<h2>";
+            document.getElementById("uno_no_cord").innerHTML = "";
+
             // if success:
             posting.done(function (data) {
                 document.getElementById("mapper").innerHTML = "";
                 var block = document.getElementById("mapper");
                 block.insertAdjacentHTML('afterbegin', data.ajax_map)
+
+                document.getElementById("mapper_uno").innerHTML = "";
+                var block = document.getElementById("mapper_uno");
+                block.insertAdjacentHTML('afterbegin', data.uno_map)
 
                 document.getElementById("my_table").innerHTML = "";
                 if (data.no_coord) {
@@ -215,6 +230,10 @@
                 }
                 for (i in data.no_coord) {
                     document.getElementById("my_table").insertAdjacentHTML('beforeend', '<tr><td>' + data.no_coord[i].STANTION + '</td></tr>');
+                };
+
+                for (i in data.uno_no_coord) {
+                    document.getElementById("uno_no_cord").insertAdjacentHTML('beforeend', '<tr><td>' + data.no_coord[i].STANTION + '</td></tr>');
                 };
 
                 document.getElementById("numHeader").innerHTML = "";
@@ -226,12 +245,6 @@
                         '<td>' + data.numbering[i].CASAR + '</td>' +
                         '<td>' + data.numbering[i].CHET + '</td>');
 
-
-                    /*document.getElementById("numHeader").insertAdjacentHTML('beforeend', '<td>' + data.numbering[i].STANTION_FINISH + '</td>');
-                    document.getElementById("numHeader").insertAdjacentHTML('beforeend', '<td>' + data.numbering[i].NUMBER + '</td>');
-                    document.getElementById("numHeader").insertAdjacentHTML('beforeend', '<td>' + data.numbering[i].CASAR + '</td>');
-                    document.getElementById("numHeader").insertAdjacentHTML('beforeend', '<td>' + data.numbering[i].CHET + '</td>');*/
-                    //document.getElementById("numHeader").insertAdjacentHTML('beforeend', '</tr>');
                 }
 
                 document.getElementById("start_end").innerHTML = "";
@@ -242,14 +255,21 @@
 
                 
                 document.getElementById("unoList").innerHTML = "";
-                for (i in data.numbering) {
-                    document.getElementById("unoList").insertAdjacentHTML('beforeend', '<td>' + data.uno_list[i].POEZD + '</td>' +
-                        '<td>' + data.uno_list[i].MIN_DTOP_T + '</td>' +
-                        '<td>' + data.uno_list[i].MAX_DTOP_T + '</td>' +
+                for (i in data.uno_list) {
+                    let month_val = document.getElementById('id_month').value;
+                    let poezd_val = data.uno_list[i].POEZD
+                    //let url = "{% url 'new_tab' month="+ month_val +" poezd="+poezd_val+" %}";
+                    let url = 'new_tab/'+ month_val + '/' + poezd_val;
+
+                    document.getElementById("unoList").insertAdjacentHTML('beforeend', 
+                        '<td>' + data.uno_list[i].SERIAL_NUMBER + '</td>' +
+                        '<td><a href="'+ url + '"target="_blank" class="link-secondary">' + data.uno_list[i].POEZD + '</a></td>' +
+                        '<td>' + data.uno_list[i].ST_START_CODE + '</td>' +
                         '<td>' + data.uno_list[i].STANTION_START + '</td>' +
+                        '<td>' + data.uno_list[i].ST_FINISH_CODE + '</td>' +
                         '<td>' + data.uno_list[i].STANTION_FINISH + '</td>');
-                }                                                        
-            
+                } 
+                //$('#uno_list').DataTable();
             });
             // if failure:
             posting.fail(function (data) {
@@ -277,8 +297,6 @@
                         $("#id_poezd").autocomplete({
                             source: data.trains_code
                         });
-
-
                     }
                 });
             }
@@ -290,12 +308,23 @@ function listChangeViz(){
     if (box.checked){
         $("#train_list").hide();
         $("#uno_list").show();
+        
+        $("#uno_no_cord").show();
+        $("#my_table").hide();
+        
+        $("#mapper_uno").show();        
+        $("#mapper").hide();
     } else {
         $("#train_list").show();
         $("#uno_list").hide();
+
+        $("#uno_no_cord").hide();
+        $("#my_table").show();
+        
+        $("#mapper_uno").hide();        
+        $("#mapper").show();
     }
 }
-
 
 </script>
 

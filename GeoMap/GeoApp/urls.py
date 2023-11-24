@@ -13,8 +13,10 @@ urlpatterns = [
     path('map_uno', views.map_uno, name='map_uno'),
 
     path('map_ajax', views.map_ajax, name='map_ajax'), #ajax
+    path('test_ajax/<tt>', views.test_ajax, name='test_ajax'), #ajax
     path('map_uno_ajax', views.map_uno_ajax, name='map_uno_ajax'), #ajax
-    path('poezd_suggest', views.poezd_suggest, name='poezd_suggest') #ajax
+    path('poezd_suggest', views.poezd_suggest, name='poezd_suggest'), #ajax
+    path('new_tab/<month>/<poezd>', views.map_two, name='new_tab') #ajax
     # path('odata', views.oData, name='odata'),
     # path('no_data', views.oData, name='no_data'),
 

@@ -242,7 +242,7 @@
                  });
    
        });*/
-
+    
     $(function () {
         $("#my_form").submit(function (event) {
             // Stop form from submitting normally
@@ -336,6 +336,15 @@
             }
         });
     });
+
+    $(function(){
+        let autosubmit = "{{autosubmit}}";
+        if( autosubmit === 'True' ){
+
+            document.getElementById("subb").click();
+        }
+        
+    })
 
 
 </script>
